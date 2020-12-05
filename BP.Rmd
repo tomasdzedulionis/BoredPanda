@@ -1,0 +1,503 @@
+---
+title: 'BoredPanda Task1'
+author: "Tomas Dzedulionis"
+date: "2020"
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+    highlight: tango
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = TRUE, warning = FALSE, message = FALSE)
+if(!require("googlesheets4")) install.packages("googlesheets4"); library("googlesheets4")
+if(!require("tidyverse")) install.packages("tidyverse"); library("tidyverse")
+if(!require("kableExtra")) install.packages("kableExtra"); library("kableExtra")
+if(!require("gridExtra")) install.packages("gridExtra"); library("gridExtra")
+if(!require("ggthemes")) install.packages("ggthemes"); library("ggthemes")
+```
+
+```{r, include=FALSE}
+gs4_deauth()
+df <- read_sheet("https://docs.google.com/spreadsheets/d/1vZODPuPAzhFbHGuotXiqK_W6LMNRxTIvVk4y50UNGN0/edit?usp=sharing", sheet=2, skip=7)
+df <- as.data.frame(df)
+All <- df %>% select(Advertiser, Placement, `Date...3`,`Total impressions...4`, `Revenue (€)...5`)%>%
+  rename(Date=`Date...3`, TotImpressions=`Total impressions...4`, Revenue=`Revenue (€)...5`)
+MMBPCOMHBS <- df %>% select(Date...6, Advertisers...7, `Key-values ID...8`, `Total impressions...9`, `Revenue (€)...10`)%>%
+  rename(Date=Date...6, Advertisers=Advertisers...7, KeyValuesID=`Key-values ID...8`, TotImpressions=`Total impressions...9`, Revenue=`Revenue (€)...10`)
+MMBPESHBS <- df%>% select(Date...11, Advertisers...12, `Key-values ID...13`, `Total impressions...14`, `Revenue (€)...15`)%>%
+  rename(Date=Date...11, Advertisers=Advertisers...12, KeyValuesID=`Key-values ID...13`, TotImpressions=`Total impressions...14`, Revenue=`Revenue (€)...15`)
+MMDEHBS <-df%>% select(Date...16, Advertisers...17, `Key-values ID...18`, `Total impressions...19`, `Revenue (USD)`)%>%
+  rename(Date=Date...16, Advertisers=Advertisers...17, KeyValuesID=`Key-values ID...18`, TotImpressions=`Total impressions...19`, RevenueUSD=`Revenue (USD)`)
+```
+
+```{r, echo=FALSE}
+url <- "https://i.pinimg.com/originals/ee/91/df/ee91df1850722705605473cf7e4ccdb8.jpg"
+```
+
+<center><img src="`r url`"></center>
+
+## Info
+
+Report was created using R programming language. Everything is automated and updatable by one click. Code can be found in my [GitHub](https://github.com/tomasdzedulionis/BoredPanda).  
+Hope you enjoy it!  
+Tomas.
+
+## Summary Tables {.tabset}
+
+### All
+This table demonstrates ***TOTAL REVENUE BY ADVERTISER AND PLACEMENT***.
+<br>
+```{r, echo=FALSE}
+sumAdvertiser <- All %>% group_by(Advertiser, Placement) %>%
+  summarise(Revenue = sum(Revenue))%>%
+  as.data.frame()
+sumAdvertiser <- add_row(sumAdvertiser,Advertiser="", Placement="", Revenue = sum(sumAdvertiser$Revenue))
+sumAdvertiser <- mutate(sumAdvertiser, Revenue = paste0('€', sumAdvertiser$Revenue))
+
+
+kbl(sumAdvertiser[,-1]) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive"))%>%
+  pack_rows("Ad Exchange", 1,3) %>%
+  pack_rows("AdSense", 4, 5)%>%
+  pack_rows("Amazon",6,6)%>%
+  pack_rows("Infolinks Media", 7,7)%>%
+  pack_rows("Optima network", 8,8)%>%
+  pack_rows("Optima network de",9,9 )%>%
+  pack_rows("Optima network es",10,10)%>%
+  pack_rows("Total", 11,11)
+
+```
+***
+
+This table demonstrates ***TOTAL IMPRESSIONS BY ADVERTISER AND PLACEMENT***.
+<br>
+```{r, echo=FALSE}
+sumimpressions <- All %>% group_by(Advertiser, Placement) %>%
+  summarise(Impressions = sum(TotImpressions))%>%
+  as.data.frame()%>% 
+  add_row(Advertiser="",Placement="Total", Impressions=sum(All$TotImpressions))
+
+kbl(sumimpressions[,-1]) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+    pack_rows("Ad Exchange", 1,3) %>%
+  pack_rows("AdSense", 4, 5)%>%
+  pack_rows("Amazon",6,6) %>%
+  pack_rows("Infolinks Media", 7,7)%>%
+  pack_rows("Optima network", 8,8)%>%
+  pack_rows("Optima network de",9,9 )%>%
+  pack_rows("Optima network es",10,10)%>%
+  pack_rows("Total", 11,11)
+```
+<br>
+
+This table demonstrates ***TOTAL REVENUES AND IMPRESSIONS OF THE PAST 7 DAYS***.  
+
+
+```{r, echo=FALSE}
+Last7days <- All %>% group_by(Date) %>%  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))
+Last7days <- tail(Last7days,7)
+Last7days$Date <- as.character(Last7days$Date)
+Last7days <-  add_row(Last7days,Date="Total", Revenue=sum(Last7days$Revenue), Impressions=sum(Last7days$Impressions))
+Last7days <- mutate(Last7days, Revenue = paste0('€', Last7days$Revenue))
+
+kbl(Last7days) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+  pack_rows("TOTAL", 8,8)
+```
+
+
+
+### MM_BPCOM_HBS
+
+This table demonstrates ***Total and last 7 days impressions and revenues of MM_BPCOM_HBS placement***
+```{r, echo=FALSE}
+mmbpcomhbs <- MMBPCOMHBS %>% group_by(Date) %>%  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))%>%
+              tail(7) %>% as.data.frame()
+mmbpcomhbs$Date <- as.character(mmbpcomhbs$Date)
+mmbpcomhbs <- add_row(mmbpcomhbs, Date="", Revenue=sum(mmbpcomhbs$Revenue), Impressions=sum(mmbpcomhbs$Impressions))
+mmbpcomhbs <- add_row(mmbpcomhbs, .before=1, Date="", Revenue=sum(MMBPCOMHBS$Revenue), Impressions=sum(MMBPCOMHBS$TotImpressions))
+mmbpcomhbs <- mutate(mmbpcomhbs, Revenue = paste0('€', mmbpcomhbs$Revenue))
+
+kbl(mmbpcomhbs) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+  pack_rows("Month Total", 1,1)%>%
+  pack_rows("Last 7 days",2,2)%>%
+  pack_rows("Last 7 days total", 9,9)
+
+```
+<br>
+
+This table demonstrates ***Total revenue and impressions by advertisers in the past month***
+```{r, echo=FALSE}
+mmbpcomhbs2 <- MMBPCOMHBS %>% group_by(Advertisers) %>% summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions)) %>% arrange(desc(Revenue))
+mmbpcomhbs2 <- mutate(mmbpcomhbs2, Revenue = paste0('€', mmbpcomhbs2$Revenue))
+
+kbl(mmbpcomhbs2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive"))
+
+```
+
+### MM_BPES_HBS
+
+This table demonstrates ***Total and last 7 days impressions and revenues of MM_BPES_HBS placement***
+```{r, echo=FALSE}
+MMBPESHBS$TotImpressions <- str_replace(MMBPESHBS$TotImpressions, "O", "0")
+MMBPESHBS$TotImpressions <- as.numeric(MMBPESHBS$TotImpressions)
+mmbpeshbs <- MMBPESHBS %>% group_by(Date)
+mmbpeshbs$TotImpressions <- as.numeric(mmbpeshbs$TotImpressions)
+mmbpeshbs <- summarise(mmbpeshbs, Revenue = sum(Revenue), Impressions=sum(TotImpressions))%>%
+  tail(7) %>% as.data.frame()
+mmbpeshbs$Date <- as.character(mmbpeshbs$Date)
+mmbpeshbs <- add_row(mmbpeshbs, Date="", Revenue=sum(mmbpeshbs$Revenue), Impressions=sum(mmbpeshbs$Impressions))
+mmbpeshbs <- add_row(mmbpeshbs, .before=1, Date="", Revenue=sum(MMBPESHBS$Revenue), Impressions=sum(MMBPESHBS$TotImpressions))
+mmbpeshbs <- mutate(mmbpeshbs, Revenue = paste0('€', mmbpeshbs$Revenue))
+
+kbl(mmbpeshbs) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+  pack_rows("Month Total", 1,1)%>%
+  pack_rows("Last 7 days",2,2)%>%
+  pack_rows("Last 7 days total", 9,9)
+
+```
+<br>
+This table demonstrates ***Total revenue and impressions by advertisers in the past month***
+```{r, echo=FALSE}
+mmbpesmhbs2 <- MMBPESHBS %>% group_by(Advertisers) %>% summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions)) %>% arrange(desc(Revenue))
+mmbpesmhbs2 <- mutate(mmbpesmhbs2, Revenue = paste0('€', mmbpesmhbs2$Revenue))
+
+kbl(mmbpesmhbs2, caption="Total revenue and impressions by advertisers in the past month") %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive"))
+
+```
+
+
+### MM_DE_HBS
+
+This table demonstrates ***Total and last 7 days impressions and revenues of MM_DE_HBS placement***
+```{r, echo=FALSE}
+
+
+mmdehbs <- MMDEHBS %>% group_by(Date) %>%  summarise(Revenue = sum(RevenueUSD), Impressions=sum(TotImpressions))%>%
+              tail(7) %>% as.data.frame()
+mmdehbs$Date <- as.character(mmdehbs$Date)
+mmdehbs <- add_row(mmdehbs, Date="", Revenue=sum(mmdehbs$Revenue), Impressions=sum(mmdehbs$Impressions))
+mmdehbs <- add_row(mmdehbs, .before=1, Date="", Revenue=sum(MMDEHBS$RevenueUSD), Impressions=sum(MMDEHBS$TotImpressions))
+mmdehbs <- mutate(mmdehbs, Revenue = paste0('$', mmdehbs$Revenue))
+
+kbl(mmdehbs, caption="Total and last 7 days impressions and revenue of MM_BP_COM_HBS placement") %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive")) %>%
+  pack_rows("Month Total", 1,1)%>%
+  pack_rows("Last 7 days",2,2)%>%
+  pack_rows("Last 7 days total", 9,9)
+
+```
+<br>
+This table demonstrates ***Total revenue and impressions by advertisers in the past month***
+```{r, echo=FALSE}
+mmdehbs2 <- MMDEHBS %>% group_by(Advertisers) %>% summarise(Revenue = sum(RevenueUSD), Impressions=sum(TotImpressions)) %>% arrange(desc(Revenue))
+mmdehbs2 <- mutate(mmdehbs2, Revenue = paste0('€', mmdehbs2$Revenue))
+
+kbl(mmdehbs2, caption="Total revenue and impressions by advertisers in the past month") %>%
+  kable_styling(bootstrap_options = c("striped", "hover","responsive"))
+
+```
+
+## Plots {.tabset}
+### Revenue
+
+```{r, echo=FALSE}
+sumAdv <-  All %>% group_by(Date) %>%
+  summarise(Revenue = sum(Revenue))%>%
+  as.data.frame()
+
+ggplot(sumAdv, aes(x=Date, y=Revenue))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Revenue", title="Revenue (Last month)")+
+  geom_hline(aes(yintercept=mean(Revenue), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+scale_x_continuous(breaks=sumAdv$Date)
+
+Last7days <- All %>% group_by(Date) %>%  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))
+Last7days <- tail(Last7days,7)
+
+
+ ggplot(Last7days, aes(x=Date, y=Revenue/1000))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Revenue (thousand €)", title="Revenue (Last 7 days)")+
+  geom_hline(aes(yintercept=mean(Revenue/1000), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+  scale_x_continuous(breaks=Last7days$Date)
+
+
+```
+<br>
+```{r,echo=FALSE}
+sumAdvertiser2 <- All %>% group_by(Advertiser) %>%
+  summarise(Revenue = sum(Revenue))%>%
+  as.data.frame()
+ggplot(sumAdvertiser2, aes(x=reorder(Advertiser,-Revenue), y=Revenue))+
+  geom_bar(fill="steelblue",stat="identity")+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1, face="bold"),
+        axis.text=element_text(size=9),
+        axis.text.y = element_text(angle = 0, hjust = 1),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  geom_text(aes(x=Advertiser, y=Revenue, label=Revenue), vjust = -0.5, position = position_dodge(0.9))+
+  labs(x="Advertiser", y="Revenue", title="Revenue (Last month) by advertiser")
+
+sumAdvertiser2 <- All %>% group_by(Placement) %>%
+  summarise(Revenue = sum(Revenue))%>%
+  as.data.frame()
+ggplot(sumAdvertiser2, aes(x=reorder(Placement,-Revenue), y=Revenue))+
+  geom_bar(fill="steelblue",stat="identity")+
+  theme_stata()+
+  theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"),
+        axis.text.y = element_text(angle = 0, hjust = 1),
+        axis.text.x = element_text(face="bold"))+
+  scale_y_continuous(breaks=seq(0, max(sumAdvertiser2$Revenue),by=20000))+
+  geom_text(aes(x=Placement, y=Revenue, label=Revenue), vjust = -0.5,size=3.5, position = position_dodge(0.9))+
+  labs(x="Placement", y="Revenue", title="Revenue (Last month) by placement")
+  
+
+```
+<br>
+```{r, echo=FALSE}
+sumAdvertiser2 <- All %>% group_by(Placement) %>%
+  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))%>%
+  as.data.frame() %>%
+  mutate(ratio=Revenue/(Impressions/1000))
+sumAdvertiser2$ratio <- round(sumAdvertiser2$ratio, 3)
+
+ggplot(sumAdvertiser2, aes(x=reorder(Placement,-ratio), y=ratio))+
+  geom_bar(fill="steelblue",stat="identity")+
+  theme_stata()+
+  theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"),
+        axis.text.y = element_text(angle = 0, hjust = 1),
+        axis.text.x = element_text(face="bold"))+
+  scale_y_continuous(breaks=seq(0, max(sumAdvertiser2$ratio),by=0.1))+
+  geom_text(aes(x=Placement, y=ratio, label=paste0(ratio," €")),size=3.5, vjust = -0.3, position = position_dodge(0.8))+
+  labs(x="Placement", y="Revenue", title="Revenue per 1000 impressions by Placement")
+
+Sys.setlocale("LC_TIME","C")
+weekday <- All
+weekday$Date <- weekdays(weekday$Date)
+weekday <- weekday %>% group_by(Date) %>% summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions)) %>%
+  mutate(ratio=Revenue/(Impressions/1000))
+weekday$ratio <- round(weekday$ratio, 3)
+ggplot(weekday, aes(x=reorder(Date,-ratio), y=ratio))+
+  geom_bar(fill="steelblue",stat="identity")+
+  theme_stata()+
+  theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"),
+        axis.text.y = element_text(angle = 0, hjust = 1),
+        axis.text.x = element_text(face="bold"))+
+  scale_y_continuous(breaks=seq(0, max(weekday$ratio),by=0.1))+
+  geom_text(aes(x=Date, y=ratio, label=paste0(ratio," €")),size=3.5, vjust = -0.3, position = position_dodge(0.8))+
+  labs(x="Day of the week", y="Revenue", title="Revenue per 1000 impressions by day of the week")
+```
+
+### Impressions
+
+```{r, echo=FALSE}
+
+sumImp <-  All %>% group_by(Date) %>%
+  summarise(Impressions = sum(TotImpressions))%>%
+  as.data.frame()
+
+ggplot(sumImp, aes(x=Date, y=Impressions/1000000))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Impressions (millions)", title="Impressions (Last month)")+
+  geom_hline(aes(yintercept=mean(Impressions/1000000), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+scale_x_continuous(breaks=sumImp$Date)
+
+Last7days <- All %>% group_by(Date) %>%  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))
+Last7days <- tail(Last7days,7)
+
+
+ ggplot(Last7days, aes(x=Date, y=Impressions/1000))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Impressions (thousands)", title="Impressions (Last 7 days)")+
+  geom_hline(aes(yintercept=mean(Impressions/1000), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+  scale_x_continuous(breaks=Last7days$Date)
+```
+```{r, echo=FALSE}
+Sys.setlocale("LC_TIME","C")
+weekday <- All
+weekday$Date <- weekdays(weekday$Date)
+weekday <- weekday %>% group_by(Date) %>% summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions)) %>%
+  mutate(ratio=Impressions/sum(Impressions)*100)
+weekday$ratio <- round(weekday$ratio, 3)
+ggplot(weekday, aes(x=reorder(Date,-ratio), y=ratio))+
+  geom_bar(fill="steelblue",stat="identity")+
+  theme_stata()+
+  theme(axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"),
+        axis.text.y = element_text(angle = 0, hjust = 1),
+        axis.text.x = element_text(face="bold"))+
+  scale_y_continuous(breaks=seq(0, max(weekday$ratio),by=1))+
+  geom_text(aes(x=Date, y=ratio, label=paste0(ratio," %")), size=3.5, vjust = -0.3, position = position_dodge(0.8))+
+  labs(x="Day of the week", y="Impressions [%]", title="Percent of total impressions by day of the week")
+
+```
+
+### MM_BPCOM_HBS
+
+```{r,echo=FALSE}
+
+sum <-  MMBPCOMHBS %>% group_by(Date) %>%
+  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))%>%
+  as.data.frame()
+
+
+ ggplot(sum, aes(x=Date, y=Revenue))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Revenue (€)", title="MM_BPCOM_HBS Revenue (Last month)")+
+  geom_hline(aes(yintercept=mean(Revenue), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+  scale_x_continuous(breaks=sum$Date)
+
+ggplot(sum, aes(x=Date, y=Impressions/1000000))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Impressions (millions)", title="MM_BPCOM_HBS Impressions (Last month)")+
+  geom_hline(aes(yintercept=mean(Impressions/1000000), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+scale_x_continuous(breaks=sum$Date)
+
+```
+
+### MM_BPES_HBS
+
+```{r, echo=FALSE}
+MMBPESHBS$TotImpressions <- str_replace(MMBPESHBS$TotImpressions, "O", "0")
+MMBPESHBS$TotImpressions <- as.numeric(MMBPESHBS$TotImpressions)
+sum <-  MMBPESHBS %>% group_by(Date) %>%
+  summarise(Revenue = sum(Revenue), Impressions=sum(TotImpressions))%>%
+  as.data.frame()
+
+
+ ggplot(sum, aes(x=Date, y=Revenue))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Revenue (€)", title="MM_BPES_HBS Revenue (Last month)")+
+  geom_hline(aes(yintercept=mean(Revenue), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+  scale_x_continuous(breaks=sum$Date)
+
+ggplot(sum, aes(x=Date, y=Impressions/1000))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Impressions (thousands)", title="MM_BPES_HBS Impressions (Last month)")+
+  geom_hline(aes(yintercept=mean(Impressions/1000), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+scale_x_continuous(breaks=sum$Date)
+
+```
+
+### MM_DE_HBS
+
+```{r,echo=FALSE}
+sum <-  MMDEHBS %>% group_by(Date) %>%
+  summarise(Revenue = sum(RevenueUSD), Impressions=sum(TotImpressions))%>%
+  as.data.frame()
+
+
+ ggplot(sum, aes(x=Date, y=Revenue))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Revenue ($)", title="MM_DE_HBS Revenue (Last month)")+
+  geom_hline(aes(yintercept=mean(Revenue), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+  scale_x_continuous(breaks=sum$Date)
+
+ggplot(sum, aes(x=Date, y=Impressions))+
+  geom_line(size=2.5, col="steelblue")+
+  geom_point(size=3)+
+  theme_stata()+
+  theme(axis.text.x=element_text(angle=45,hjust=1),
+        axis.text=element_text(size=9),
+        axis.title=element_text(size=12,face="bold"),
+        plot.background = element_rect(fill = "white"))+
+  labs(x="Date", y="Impressions", title="MM_DE_HBS Impressions (Last month)")+
+  geom_hline(aes(yintercept=mean(Impressions), linetype="Mean"), color="black") +
+  scale_linetype_manual(name = "", values = c(1, 1), 
+                        guide = guide_legend(override.aes = list(color = c("black"))))+
+scale_x_continuous(breaks=sum$Date)
+```
+
+## Insights
+
+Data shows that last month **MM_BPCOM_HBS Placement** and the **Ad Exchange** advertiser generated the largest number of revenue and impressions. **MM_BPCOM_HBS** placement also generated **47%** more revenue per 1000 impressions than **MM_DE_HBS** placement and **268%** more than **MM_BPES_HBS** placement.  
+Also, advertising performed really well in the past 5 days reaching peak value at day **11-21** and generating larger revenue than the mean value of the month.   
+In terms of number of impressions, data shows that **Thursday** is the best performing day of the week *(15.57% of all impressions)*, but biggest revenue per 1000 impressions was generated on **Sundays** *(0.844€)*. 
